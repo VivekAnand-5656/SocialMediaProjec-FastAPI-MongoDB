@@ -4,9 +4,9 @@ from motor.motor_asyncio import AsyncIOMotorClient
 load_dotenv()
 
 MONGO_URL=os.getenv("MONGO_URL","")
-MONGO_NAME=os.getenv("MONGO_NAME","")
+DB_NAME=os.getenv("DB_NAME","")
 
 client = AsyncIOMotorClient(MONGO_URL)
-db = client[MONGO_NAME]
+db = client[DB_NAME]
 
 publicCollection = db["users"]
