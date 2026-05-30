@@ -17,7 +17,11 @@ async def register_user(user):
         "email" : user.email,
         "mobile" : user.mobile,
         "createdAt" : datetime.utcnow(),
-        "password" : hashPassword
+        "password" : hashPassword,
+        "followings":[],
+        "followers":[],
+        "numOfFollowers":0,
+        "numOfFollowings":0
     }
 
     publicCollection.insert_one(createUser)

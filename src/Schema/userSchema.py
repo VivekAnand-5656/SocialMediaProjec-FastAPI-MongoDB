@@ -12,3 +12,8 @@ class LoginUser(BaseModel):
     email:str
     password:str
 
+class UpdateProfile(BaseModel):
+    name:str
+    email:str
+    mobile:str  
+    username:str
