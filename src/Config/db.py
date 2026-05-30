@@ -10,3 +10,4 @@ client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
 
 publicCollection = db["users"]
+postCollection = db["posts"]

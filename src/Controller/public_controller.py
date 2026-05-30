@@ -1,8 +1,7 @@
-from fastapi import HTTPException,Depends
-from src.Config.db import db, publicCollection
+from fastapi import HTTPException
+from src.Config.db import publicCollection
 from src.Auths.auth import hashingPassword,verifyPassword,create_token
-from datetime import datetime
-from src.Dependencies.check import isLogin
+from datetime import datetime 
 
 # ==== Register User =====
 async def register_user(user):
@@ -40,6 +39,7 @@ async def loginUser(data):
         "_id":str(user["_id"]),
         "email":user["email"]
     })
+    print("Type of user id:- ",type(user["_id"]))
 
     return {
         "token":token
