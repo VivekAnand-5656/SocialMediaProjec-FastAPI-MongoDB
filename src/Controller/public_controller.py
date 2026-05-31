@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from src.Config.db import publicCollection
+from src.Config.db import publicCollection, postCollection
 from src.Auths.auth import hashingPassword,verifyPassword,create_token
 from datetime import datetime 
 from fastapi.encoders import jsonable_encoder
@@ -23,7 +23,8 @@ async def register_user(user):
         "followings":[],
         "followers":[],
         "numOfFollowers":0,
-        "numOfFollowings":0
+        "numOfFollowings":0,
+        "username":user.username
     }
 
     publicCollection.insert_one(createUser)
@@ -52,7 +53,7 @@ async def loginUser(data):
     }
 
 # ====== Get Users ===
-async def allUsers(user):
+async def allUsers():
     users = await publicCollection.find().to_list(length=None)
     if not users:
         raise HTTPException(404, detail="User not available")
@@ -62,3 +63,14 @@ async def allUsers(user):
         custom_encoder={ObjectId:str}
     )
 
+# ====== all posts =====
+async def allposts():
+    posts = await postCollection.find().sort("createdAt",-1).to_list(length=None)
+
+    if not posts:
+        raise HTTPException(404,detail="Not Posts yet!")
+
+    return jsonable_encoder(
+        posts,
+        custom_encoder={ObjectId:str}
+    )

@@ -66,3 +66,13 @@ async def allusers(name:str,user=Depends(isLogin)):
 @userroutes.get("/myfollowers")
 async def followers(user=Depends(isLogin)):
     return await postController.myFollowers(user)
+
+# ========= My Followings =========
+@userroutes.get("/myfollowings")
+async def followings(user=Depends(isLogin)):
+    return await postController.myFollowings(user)
+
+# ====== Find User by id =========
+@userroutes.get("/userbyid/{userId}")
+async def findUserById(userId:str,user=Depends(isLogin)):
+    return await postController.userById(userId,user)

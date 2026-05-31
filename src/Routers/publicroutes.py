@@ -22,5 +22,10 @@ async def login(data:LoginUser):
 
 # ====== ALl Users ===
 @publicroutes.get("/users")
-async def allusers(user = Depends(isLogin)):
-    return await public_controller.allUsers(user)
+async def allusers():
+    return await public_controller.allUsers()
+
+# ======= All Posts =====
+@publicroutes.get("/allposts")
+async def postsAll():
+    return await public_controller.allposts()
