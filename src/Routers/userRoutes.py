@@ -56,3 +56,13 @@ async def profileupdate(
         file,
         user
     )
+
+# ========== Find Users =============
+@userroutes.get("/findusers")
+async def allusers(name:str,user=Depends(isLogin)):
+    return await postController.findusers(name,user)
+
+# ========= My Followers =========
+@userroutes.get("/myfollowers")
+async def followers(user=Depends(isLogin)):
+    return await postController.myFollowers(user)

@@ -3,6 +3,7 @@ from datetime import datetime
 from src.Config.cloudinary_config import upload_image
 from src.Config.db import postCollection, publicCollection
 from bson import ObjectId
+from fastapi.encoders import jsonable_encoder
 
 # ==== Create Post ====
 async def createPost(caption: str, file, user):
@@ -52,9 +53,13 @@ async def editPost(postId:str,caption:str,user):
             }
         }
     )
-    return {
-        "message":"Post Updated Successfully"
-    }
+    updatedPost = await postCollection.find_one(
+        {"_id":post["_id"]}
+    )
+    return jsonable_encoder(
+        updatedPost,
+        custom_encoder={ObjectId:str}
+    )
 # =============== Delete Post ===========
 async def deletePost(postId:str,user):
     post = await postCollection.find_one(
@@ -95,7 +100,10 @@ async def getPosts():
                 like["user_id"] = str(like["user_id"])
 
 
-        return posts
+        return jsonable_encoder(
+            posts,
+            custom_encoder={ObjectId:str}
+        )
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -122,20 +130,23 @@ async def likePost(postId:str,user):
             return {
                 "message":"Unliked this post"
             }
-    newlike = {
-        "user_id":user["_id"]
-    }
+    likedbyuser = await publicCollection.find_one(
+        {"_id":ObjectId(user["_id"])}
+    ) 
+    
     postCollection.update_one(
         {"_id":ObjectId(postId)},
         {
-            "$push":{
-                "likes":newlike
+            "$addToSet":{
+                "likes":{
+                    "user_id":user["_id"], 
+                    "name":likedbyuser["name"]
+                } 
             }
         }
     ) 
     return {
-        "message":"Liked this post",
-        "newlike":newlike
+        "message":"Liked this post" 
     }
 
 # === Comment ===
@@ -145,16 +156,21 @@ async def commentPost(postId:str,comment:str,user):
     )
     if not post:
         raise HTTPException(404,detail="Post not found!")
-        
+    
+    commentByuser = await publicCollection.find_one(
+        {"_id":ObjectId(user["_id"])}
+    )
     newComment = {
         "user_id":user["_id"],
-        "comment":comment
+        "comment":comment,
+        "user_id":user["_id"], 
+        "name":commentByuser["name"]
     }
     postCollection.update_one(
         {"_id":ObjectId(postId)},
         {
             "$push":{
-                "comments":newComment
+                "comments":newComment 
             }
         }
     )
@@ -181,9 +197,12 @@ async def follow(userId:str,user):
     await publicCollection.update_one(
         {"_id":ObjectId(user["_id"])},
         {
-            "$push":{
+            "$addToSet":{
                 "followings":{
-                    "user_id":followingUser["_id"]
+                    "user_id":followingUser["_id"],
+                    "username":followingUser["username"],
+                    "name":followingUser["name"],
+                    "image_url":followingUser["image_url"]
                 }
             }
         }
@@ -191,9 +210,12 @@ async def follow(userId:str,user):
     await publicCollection.update_one(
         {"_id":ObjectId(userId)},
         {
-            "$push":{
+            "$addToSet":{
                 "followers":{
-                    "user_id":user["_id"]
+                    "user_id":user["_id"],
+                    "username":user["username"],
+                    "name":user["name"],
+                    "image_url":user["image_url"]
                 }
             }
         }
@@ -255,8 +277,11 @@ async def viewProfile(user):
     )
     if not profile:
         raise HTTPException(404,detail="User not found")
-    profile["_id"] = str(profile["_id"])
-    return profile
+    # profile["_id"] = str(profile["_id"])
+    return jsonable_encoder(
+        profile,
+        custom_encoder={ObjectId:str}
+    )
 
 # -------- Update Profile ---------
 async def updateProfile(name:str,email:str,mobile:str,username:str, file, user):
@@ -291,8 +316,52 @@ async def updateProfile(name:str,email:str,mobile:str,username:str, file, user):
 
     updatedUser = await publicCollection.find_one(
         {"_id": curentUser["_id"]}
+    ) 
+
+    return jsonable_encoder(
+        {
+            "message": "Profile Updated",
+            "user": updatedUser
+        },
+        custom_encoder={ObjectId:str}
     )
 
-    updatedUser["_id"] = str(updatedUser["_id"])
+# ========== Find Users ========
+async def findusers(name:str,user):
 
-    return updatedUser
+    users = await publicCollection.find(
+        {
+            "$or": [
+            {"name": {"$regex": name, "$options": "i"}},
+            {"username": {"$regex": name, "$options": "i"}}
+            ]
+        }
+    ).to_list(length=None) 
+    return jsonable_encoder(
+        users,
+        custom_encoder={ObjectId:str}
+    )
+
+# =============== My Followers ============
+async def myFollowers(user):
+    userdata = await publicCollection.find_one(
+        {"_id":ObjectId(user["_id"])}
+    ) 
+    followerIds = []
+    for follower in userdata["followers"]:
+        followerIds.append(ObjectId(follower["user_id"]))
+
+    followers = await publicCollection.find(
+        {
+            "_id":{
+                "$in":followerIds
+            }
+        }
+    ).to_list(length=None)
+    
+    return jsonable_encoder(
+        followers,
+        custom_encoder={ObjectId:str}
+    )
+    
+# ====== 

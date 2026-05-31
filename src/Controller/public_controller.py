@@ -2,6 +2,8 @@ from fastapi import HTTPException
 from src.Config.db import publicCollection
 from src.Auths.auth import hashingPassword,verifyPassword,create_token
 from datetime import datetime 
+from fastapi.encoders import jsonable_encoder
+from bson import ObjectId
 
 # ==== Register User =====
 async def register_user(user):
@@ -54,7 +56,9 @@ async def allUsers(user):
     users = await publicCollection.find().to_list(length=None)
     if not users:
         raise HTTPException(404, detail="User not available")
-    for us in users:
-        us["_id"] = str(us["_id"])
-    return users
+     
+    return jsonable_encoder(
+        users,
+        custom_encoder={ObjectId:str}
+    )
 
