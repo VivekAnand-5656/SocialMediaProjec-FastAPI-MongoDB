@@ -1,9 +1,10 @@
 from fastapi import HTTPException
 from datetime import datetime
-from src.Config.cloudinary_config import upload_image
+from src.Config.cloudinary_config import upload_image, upload_reel
 from src.Config.db import postCollection, publicCollection
 from bson import ObjectId
 from fastapi.encoders import jsonable_encoder
+import cloudinary
 
 # ==== Create Post ====
 async def createPost(caption: str, file, user):
@@ -37,7 +38,50 @@ async def createPost(caption: str, file, user):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+# ============== Upload Reel ===============
+async def createReel(caption:str,file,user):
+    try:
+        video = upload_reel(file.file)
+        newpost = {
+            "caption": caption,
+            "video_url": video["url"],
+            "public_id": video["public_id"],
+            "likes": [],
+            "comments": [],
+            "user_id": ObjectId(user["_id"]),  
+            "createdAt": datetime.utcnow()
+        }
+        result = await postCollection.insert_one(newpost)
+        newreel = await postCollection.find_one(
+            {"_id":result.inserted_id}
+        )
 
+        return jsonable_encoder(
+            {
+                "msg":"Reel Uploaded Successfully",
+                "Reel":newreel
+            },
+            custom_encoder={ObjectId:str}
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    # ============ Find Reel ========
+async def findReel(user):
+    try:
+        reels = await postCollection.find(
+            {"video_url":{"$exists":True}}
+        ).sort({"createdAt":1}).to_list(length=None)
+        if not reels:
+            raise HTTPException(404,detail="Reels not uploaded!")
+        return jsonable_encoder(
+            reels,
+            custom_encoder={ObjectId:str}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+     
 # =============== Edit Posts =======
 async def editPost(postId:str,caption:str,user):
     try:
@@ -71,6 +115,21 @@ async def deletePost(postId:str,user):
         )
         if not post:
             raise HTTPException(404,detail="Post not found")
+        
+        if "public_id" in post:
+            cloudinary.uploader.destroy(
+                post["public_id"],
+                resource_type="video",
+
+            )
+        if "public_id" in post:
+            cloudinary.uploader.destroy(
+                post["public_id"],
+                resource_type="image",
+
+            )
+            
+
         await postCollection.delete_one(
             {"_id":post["_id"]}
         )
@@ -98,15 +157,6 @@ async def getPosts():
             }
         ]).to_list(None)
 
-        for post in posts:
-            post["_id"] = str(post["_id"])
-            post["user_id"] = str(post["user_id"])
-            if "user" in post:
-                post["user"]["_id"] = str(post["user"]["_id"])
-            for like in post["likes"]:
-                like["user_id"] = str(like["user_id"])
-
-
         return jsonable_encoder(
             posts,
             custom_encoder={ObjectId:str}
@@ -115,6 +165,78 @@ async def getPosts():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+# ==================== Saved Post =============
+async def savePost(postId:str,user):
+    try:
+        post = await postCollection.find_one({
+            "_id":ObjectId(postId)
+        })
+        if not post:
+            raise HTTPException(404,detail="Post not found")
+        
+        isSavePost = await publicCollection.find_one(
+            {
+                "_id":ObjectId(user["_id"]),
+                "savedPosts.post_id": {
+                    "$in": [post["_id"]]
+                }
+            }
+        )
+        if isSavePost:
+            raise HTTPException(401,detail="Post already saved !")
+
+        await publicCollection.update_one(
+            {"_id": ObjectId(user["_id"])},
+            {
+                "$addToSet":{
+                    "savedPosts":{
+                        "post_id":post["_id"]
+                    }
+                }
+            }
+        ) 
+        return jsonable_encoder(
+            {
+                "msg":"Post Saved Successfully" 
+            },
+            custom_encoder={ObjectId:str}
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+# ============ Unsave Post ==========
+async def unSavePost(postId:str,user):
+    try:
+        isSavePost = await publicCollection.find_one(
+            {
+                "_id":ObjectId(user["_id"]),
+                "savedPosts.post_id": {
+                    "$in": [ObjectId(postId)]
+                }
+            }
+        )
+        if not isSavePost:
+            raise HTTPException(401,detail="Post not saved !")
+        await publicCollection.update_one(
+            {"_id":ObjectId(user["_id"])},
+            {
+                "$pull":{
+                    "savedPosts":{
+                        "post_id":ObjectId(postId)
+                    }
+                },
+            }
+        )
+
+        return jsonable_encoder(
+            {
+                "msg":"Post UnSaved Successfully" 
+            },
+            custom_encoder={ObjectId:str}
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 # ======== Likes ======
 async def likePost(postId:str,user):
     try:

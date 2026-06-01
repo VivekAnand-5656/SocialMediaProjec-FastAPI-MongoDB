@@ -8,6 +8,14 @@ userroutes = APIRouter(prefix="/user",tags=["User"])
 async def postCreate(caption:str = Form(...),file: UploadFile= File(...),user=Depends(isLogin)):
     return await postController.createPost(caption,file,user)
 
+@userroutes.post("/createreel")
+async def reelcreate(caption:str = Form(...),file:UploadFile=File(...),user=Depends(isLogin)):
+    return await postController.createReel(caption,file,user)
+
+@userroutes.get("/reels")
+async def reels(user=Depends(isLogin)):
+    return await postController.findReel(user)
+
 @userroutes.put("/updatepost")
 async def updatePost(postId:str,caption:str,user=Depends(isLogin)):
     return await postController.editPost(postId,caption,user)
@@ -19,6 +27,14 @@ async def deletepost(postId:str,user=Depends(isLogin)):
 @userroutes.get("/posts")
 async def allposts():
     return await postController.getPosts() 
+
+@userroutes.put("/savepost")
+async def saveposts(postId:str,user=Depends(isLogin)):
+    return await postController.savePost(postId,user)
+
+@userroutes.put("/unsavepost")
+async def unsaveposts(postId:str,user=Depends(isLogin)):
+    return await postController.unSavePost(postId,user)
 
 @userroutes.put("/likepost")
 async def postlike(postId:str,user=Depends(isLogin)):

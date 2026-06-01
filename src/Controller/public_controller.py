@@ -24,7 +24,8 @@ async def register_user(user):
         "followers":[],
         "numOfFollowers":0,
         "numOfFollowings":0,
-        "username":user.username
+        "username":user.username,
+        "savedPosts":[]
     }
 
     publicCollection.insert_one(createUser)

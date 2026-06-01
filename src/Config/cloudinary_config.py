@@ -28,3 +28,15 @@ def upload_image(file):
         "url":result["secure_url"],
         "public_id":result["public_id"]
     }
+
+def upload_reel(file):
+    result = cloudinary.uploader.upload(
+        file,
+        resource_type="video",
+        folder="videos"
+    )
+
+    return {
+        "url":result["secure_url"],
+        "public_id":result["public_id"]
+    }
