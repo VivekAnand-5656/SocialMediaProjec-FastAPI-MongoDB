@@ -25,12 +25,16 @@ async def deletepost(postId:str,user=Depends(isLogin)):
     return await postController.deletePost(postId,user)
 
 @userroutes.get("/posts")
-async def allposts():
-    return await postController.getPosts() 
+async def allposts(user=Depends(isLogin)):
+    return await postController.getPosts(user) 
 
 @userroutes.put("/savepost/{postId}")
-async def saveposts(postId:str,user=Depends(isLogin)):
+async def savepost(postId:str,user=Depends(isLogin)):
     return await postController.savePost(postId,user)
+
+@userroutes.get("/savedposts/{userId}")
+async def savedposts(userId:str,user=Depends(isLogin)):
+    return await postController.savedposts(userId,user)
 
 @userroutes.put("/unsavepost/{postId}")
 async def unsaveposts(postId:str,user=Depends(isLogin)):

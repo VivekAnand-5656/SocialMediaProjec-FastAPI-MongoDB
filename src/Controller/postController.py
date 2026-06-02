@@ -14,7 +14,7 @@ async def createPost(caption: str, file, user):
 
         newpost = {
             "caption": caption,
-            "image_url": image["url"],
+            "post_url": image["url"],
             "public_id": image["public_id"],
             "likes": [],
             "comments": [],
@@ -44,7 +44,7 @@ async def createReel(caption:str,file,user):
         video = upload_reel(file.file)
         newpost = {
             "caption": caption,
-            "video_url": video["url"],
+            "post_url": video["url"],
             "public_id": video["public_id"],
             "likes": [],
             "comments": [],
@@ -70,7 +70,7 @@ async def createReel(caption:str,file,user):
 async def findReel(user):
     try:
         reels = await postCollection.find(
-            {"video_url":{"$exists":True}}
+            {"post_url":{"$exists":True}}
         ).sort({"createdAt":1}).to_list(length=None)
         if not reels:
             raise HTTPException(404,detail="Reels not uploaded!")
@@ -141,21 +141,28 @@ async def deletePost(postId:str,user):
         raise HTTPException(status_code=500, detail=str(e))
 
 # =============== Get Posts ========
-async def getPosts():
+async def getPosts(user):
     try:
         posts = await postCollection.aggregate([
             {
+                "$match": {
+                    "user_id": ObjectId(user["_id"])
+                }
+            },
+            {
                 "$lookup": {
-                    "from": "users",
-                    "localField": "user_id",
-                    "foreignField": "_id",
-                    "as": "user"
+                "from": "users",
+                "localField": "user_id",
+                "foreignField": "_id",
+                "as": "user"
                 }
             },
             {
                 "$unwind": "$user"
             }
         ]).to_list(None)
+        if not posts:
+            raise HTTPException(404,detail="Empty Posts")
 
         return jsonable_encoder(
             posts,
@@ -204,6 +211,19 @@ async def savePost(postId:str,user):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+# ============== Saved Posts ==========
+async def savedposts(userId:str,user):
+    try:
+        posts = await postCollection.find({"_id":ObjectId(userId)}).to_list(length=None)
+        if not posts:
+            raise HTTPException(404,detail="Not Posts Saved !")
+        return jsonable_encoder(
+            posts,
+            custom_encoder={ObjectId:str}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ============ Unsave Post ==========
 async def unSavePost(postId:str,user):
     try:
@@ -245,35 +265,26 @@ async def likePost(postId:str,user):
         })
         if not post:
             raise HTTPException(404,detail="Post not found")
-        # for like in post["likes"]:
-        #     if like["user_id"] == user["_id"]:
-        #         await postCollection.update_one(
-        #             {"_id":ObjectId(postId)},
-        #             {
-        #                 "$pull":{
-        #                     "likes":{
-        #                         "user_id":like["user_id"]
-        #                     }
-        #                 }
-        #             }
-        #         )
-        #         return {
-        #             "message":"Unliked this post"
-        #         }
+         
         likedbyuser = await publicCollection.find_one(
             {"_id":ObjectId(user["_id"])}
         ) 
-        
+        likdeuserdata = {
+            "user_id":user["_id"], 
+            "name":likedbyuser["name"],
+            "username":likedbyuser["username"],
+        }
+        if "image_url" in likedbyuser:
+            likdeuserdata["image_url"]=likedbyuser["image_url"]
         postCollection.update_one(
             {"_id":ObjectId(postId)},
             {
                 "$addToSet":{
-                    "likes":{
-                        "user_id":user["_id"], 
-                        "name":likedbyuser["name"],
-                        "username":likedbyuser["username"]
-                    } 
+                    "likes":likdeuserdata 
                 }
+            },
+            {
+                "$lookup":"$user"
             }
         ) 
         return {
@@ -338,6 +349,8 @@ async def commentPost(postId:str,comment:str,user):
             "user_id":user["_id"], 
             "name":commentByuser["name"]
         }
+        if "image_url" in commentByuser:
+            newComment["image_url"] = commentByuser["image_url"]
         postCollection.update_one(
             {"_id":ObjectId(postId)},
             {

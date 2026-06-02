@@ -66,8 +66,20 @@ async def allUsers():
 
 # ====== all posts =====
 async def allposts():
-    posts = await postCollection.find().sort("createdAt",-1).to_list(length=None)
-
+    # posts = await postCollection.find().sort("createdAt",-1).to_list(length=None)
+    posts = await postCollection.aggregate([
+        {
+            "$lookup":{
+                "from":"users",
+                "localField":"user_id",
+                "foreignField":"_id",
+                "as":"user"
+            }
+        },
+        {
+            "$unwind":"$user"
+        }
+    ]).to_list(length=None)
     if not posts:
         raise HTTPException(404,detail="Not Posts yet!")
 
