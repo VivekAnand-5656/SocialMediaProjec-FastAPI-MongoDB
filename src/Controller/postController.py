@@ -282,10 +282,7 @@ async def likePost(postId:str,user):
                 "$addToSet":{
                     "likes":likdeuserdata 
                 }
-            },
-            {
-                "$lookup":"$user"
-            }
+            } 
         ) 
         return {
             "message":"Liked this post" 
