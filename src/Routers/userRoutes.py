@@ -16,11 +16,11 @@ async def reelcreate(caption:str = Form(...),file:UploadFile=File(...),user=Depe
 async def reels(user=Depends(isLogin)):
     return await postController.findReel(user)
 
-@userroutes.put("/updatepost")
+@userroutes.put("/updatepost/{postId}")
 async def updatePost(postId:str,caption:str,user=Depends(isLogin)):
     return await postController.editPost(postId,caption,user)
 
-@userroutes.delete("/deletepost")
+@userroutes.delete("/deletepost/{postId}")
 async def deletepost(postId:str,user=Depends(isLogin)):
     return await postController.deletePost(postId,user)
 
@@ -28,27 +28,27 @@ async def deletepost(postId:str,user=Depends(isLogin)):
 async def allposts():
     return await postController.getPosts() 
 
-@userroutes.put("/savepost")
+@userroutes.put("/savepost/{postId}")
 async def saveposts(postId:str,user=Depends(isLogin)):
     return await postController.savePost(postId,user)
 
-@userroutes.put("/unsavepost")
+@userroutes.put("/unsavepost/{postId}")
 async def unsaveposts(postId:str,user=Depends(isLogin)):
     return await postController.unSavePost(postId,user)
 
-@userroutes.put("/likepost")
+@userroutes.put("/likepost/{postId}")
 async def postlike(postId:str,user=Depends(isLogin)):
     return await postController.likePost(postId,user)
 
-@userroutes.put("/commentpost")
+@userroutes.put("/commentpost/{postId}")
 async def postComment(postId:str,comment:str,user=Depends(isLogin)):
     return await postController.commentPost(postId,comment,user)
 
-@userroutes.put("/follow")
+@userroutes.put("/follow/{userId}")
 async def followUser(userId:str,user=Depends(isLogin)):
     return await postController.follow(userId,user)
 
-@userroutes.put("/unfollow")
+@userroutes.put("/unfollow/{userId}")
 async def unfollow(userId:str,user=Depends(isLogin)):
     return await postController.unfollow(userId,user)
 
