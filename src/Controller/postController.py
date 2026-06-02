@@ -245,21 +245,21 @@ async def likePost(postId:str,user):
         })
         if not post:
             raise HTTPException(404,detail="Post not found")
-        for like in post["likes"]:
-            if like["user_id"] == user["_id"]:
-                await postCollection.update_one(
-                    {"_id":ObjectId(postId)},
-                    {
-                        "$pull":{
-                            "likes":{
-                                "user_id":like["user_id"]
-                            }
-                        }
-                    }
-                )
-                return {
-                    "message":"Unliked this post"
-                }
+        # for like in post["likes"]:
+        #     if like["user_id"] == user["_id"]:
+        #         await postCollection.update_one(
+        #             {"_id":ObjectId(postId)},
+        #             {
+        #                 "$pull":{
+        #                     "likes":{
+        #                         "user_id":like["user_id"]
+        #                     }
+        #                 }
+        #             }
+        #         )
+        #         return {
+        #             "message":"Unliked this post"
+        #         }
         likedbyuser = await publicCollection.find_one(
             {"_id":ObjectId(user["_id"])}
         ) 
@@ -279,6 +279,44 @@ async def likePost(postId:str,user):
         return {
             "message":"Liked this post" 
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+# ------------- Unlike ----------
+async def unlikepost(postId:str,user):
+    try:
+        isliked = await postCollection.find_one(
+            {
+                "_id":ObjectId(postId),
+                "likes.user_id":{
+                    "$in":[ObjectId(user["_id"])]
+                }
+            }
+        )
+        if isliked:
+            raise HTTPException(401,detail="Post is also unliked!")
+        likedbyuser = await publicCollection.find_one(
+            {"_id":ObjectId(user["_id"])}
+        ) 
+        await postCollection.update_one(
+            {"_id":ObjectId(postId)},
+            {
+                "$pull":{
+                    "likes":{
+                        "user_id":user["_id"], 
+                        "name":likedbyuser["name"],
+                        "username":likedbyuser["username"]
+                    }
+                }
+            }
+        )
+        return jsonable_encoder(
+            {
+                "message":"Unliked this post"
+            },
+            custom_encoder={ObjectId:str}
+        )
+    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

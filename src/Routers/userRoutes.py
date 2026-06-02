@@ -40,6 +40,10 @@ async def unsaveposts(postId:str,user=Depends(isLogin)):
 async def postlike(postId:str,user=Depends(isLogin)):
     return await postController.likePost(postId,user)
 
+@userroutes.put("/unlikepost/{postId}")
+async def unlikePost(postId:str,user=Depends(isLogin)):
+    return await postController.unlikepost(postId,user)
+
 @userroutes.put("/commentpost/{postId}")
 async def postComment(postId:str,comment:str,user=Depends(isLogin)):
     return await postController.commentPost(postId,comment,user)
