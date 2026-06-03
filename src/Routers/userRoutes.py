@@ -20,8 +20,7 @@ async def reels(user=Depends(isLogin)):
     return await postController.findReel(user)
 
 @userroutes.put("/updatepost/{postId}")
-async def updatePost(postId:str,caption:str,user=Depends(isLogin)):
-    body = EditPost(caption=caption)
+async def updatePost(postId:str,body:EditPost,user=Depends(isLogin)):
     return await postController.editPost(postId,body,user)
 
 @userroutes.delete("/deletepost/{postId}")
