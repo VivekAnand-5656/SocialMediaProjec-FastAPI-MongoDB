@@ -215,33 +215,35 @@ async def savePost(postId:str,user):
 # ============== Saved Posts ==========
 async def savedposts(userId:str,user):
     try:
-        posts = await publicCollection.aggregate([
-            {
-                "$match": {
-                    "_id": ObjectId(userId)
+       userdata = await publicCollection.find_one({"_id":ObjectId(userId)})
+       if not userdata:
+           raise HTTPException(404,detail="User not logined")
+       posts = await postCollection.aggregate([
+           {
+               "$match": {
+                    "_id": {
+                        "$in": [
+                            ObjectId(post["post_id"])
+                            for post in userdata["savedPosts"]
+                        ]
+                    }
                 }
-            },
-            {
-                "$unwind": "$savedPosts"
             },
             {
                 "$lookup": {
-                    "from": "posts",
-                    "localField": "savedPosts.post_id",
+                    "from": "users",
+                    "localField": "user_id",
                     "foreignField": "_id",
-                    "as": "post"
+                    "as": "user"
                 }
             },
             {
-                "$unwind": "$post"
-            },
-            {
-                "$replaceRoot": {
-                    "newRoot": "$post"
-                }
+                "$unwind": "$user"
             }
-        ]).to_list(None) 
-        return jsonable_encoder(
+            ]).to_list(None) 
+       if not posts:
+           raise HTTPException(404,detail="Empty saved posts")
+       return jsonable_encoder(
             posts,
             custom_encoder={ObjectId:str}
         )
