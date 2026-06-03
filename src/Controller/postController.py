@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from datetime import datetime
+from src.Schema.postSchema import CommentPost
 from src.Config.cloudinary_config import upload_image, upload_reel
 from src.Config.db import postCollection, publicCollection
 from bson import ObjectId
@@ -329,7 +330,7 @@ async def unlikepost(postId:str,user):
         raise HTTPException(status_code=500, detail=str(e))
 
 # === Comment ===
-async def commentPost(postId:str,comment:str,user):
+async def commentPost(postId:str,body,user):
     try:
         post = postCollection.find_one(
             {"_id":ObjectId(postId)}
@@ -342,7 +343,7 @@ async def commentPost(postId:str,comment:str,user):
         )
         newComment = {
             "user_id":user["_id"],
-            "comment":comment,
+            "comment":body.comment,
             "user_id":user["_id"], 
             "name":commentByuser["name"]
         }

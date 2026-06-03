@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends,File, UploadFile, Form
 from src.Dependencies.check import isLogin 
 from src.Controller import postController
 from src.Schema.userSchema import UpdateProfile
+from src.Schema.postSchema import CommentPost
 userroutes = APIRouter(prefix="/user",tags=["User"])
 
 @userroutes.post("/createpost")
@@ -49,8 +50,8 @@ async def unlikePost(postId:str,user=Depends(isLogin)):
     return await postController.unlikepost(postId,user)
 
 @userroutes.put("/commentpost/{postId}")
-async def postComment(postId:str,comment:str,user=Depends(isLogin)):
-    return await postController.commentPost(postId,comment,user)
+async def postComment(postId:str,body:CommentPost,user=Depends(isLogin)):
+    return await postController.commentPost(postId,body,user)
 
 @userroutes.put("/follow/{userId}")
 async def followUser(userId:str,user=Depends(isLogin)):
