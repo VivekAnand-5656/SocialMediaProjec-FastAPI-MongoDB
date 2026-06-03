@@ -173,7 +173,7 @@ async def getPosts(user):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-# ==================== Saved Post =============
+# ==================== Save Post =============
 async def savePost(postId:str,user):
     try:
         post = await postCollection.find_one({
@@ -215,9 +215,32 @@ async def savePost(postId:str,user):
 # ============== Saved Posts ==========
 async def savedposts(userId:str,user):
     try:
-        posts = await postCollection.find({"_id":ObjectId(userId)}).to_list(length=None)
-        if not posts:
-            raise HTTPException(404,detail="Not Posts Saved !")
+        posts = await publicCollection.aggregate([
+            {
+                "$match": {
+                    "_id": ObjectId(userId)
+                }
+            },
+            {
+                "$unwind": "$savedPosts"
+            },
+            {
+                "$lookup": {
+                    "from": "posts",
+                    "localField": "savedPosts.post_id",
+                    "foreignField": "_id",
+                    "as": "post"
+                }
+            },
+            {
+                "$unwind": "$post"
+            },
+            {
+                "$replaceRoot": {
+                    "newRoot": "$post"
+                }
+            }
+        ]).to_list(None) 
         return jsonable_encoder(
             posts,
             custom_encoder={ObjectId:str}
