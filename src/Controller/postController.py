@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from datetime import datetime
-from src.Schema.postSchema import CommentPost
+from src.Schema.postSchema import CommentPost,CreatePost
 from src.Config.cloudinary_config import upload_image, upload_reel
 from src.Config.db import postCollection, publicCollection
 from bson import ObjectId
@@ -8,13 +8,13 @@ from fastapi.encoders import jsonable_encoder
 import cloudinary
 
 # ==== Create Post ====
-async def createPost(caption: str, file, user):
+async def createPost(body, file, user):
     try:
         image = upload_image(file.file)
         print("id type:- ",type(user["_id"]))
 
         newpost = {
-            "caption": caption,
+            "caption": body.caption,
             "post_url": image["url"],
             "public_id": image["public_id"],
             "likes": [],
@@ -40,11 +40,11 @@ async def createPost(caption: str, file, user):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 # ============== Upload Reel ===============
-async def createReel(caption:str,file,user):
+async def createReel(body,file,user):
     try:
         video = upload_reel(file.file)
         newpost = {
-            "caption": caption,
+            "caption": body.caption,
             "post_url": video["url"],
             "public_id": video["public_id"],
             "likes": [],
@@ -84,7 +84,7 @@ async def findReel(user):
 
      
 # =============== Edit Posts =======
-async def editPost(postId:str,caption:str,user):
+async def editPost(postId:str,body,user):
     try:
         post = await postCollection.find_one(
             {"_id":ObjectId(postId)}
@@ -95,7 +95,7 @@ async def editPost(postId:str,caption:str,user):
             {"_id":post["_id"]},
             {
                 "$set":{
-                    "caption":caption
+                    "caption":body.caption
                 }
             }
         )

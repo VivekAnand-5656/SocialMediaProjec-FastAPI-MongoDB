@@ -2,16 +2,18 @@ from fastapi import APIRouter, Depends,File, UploadFile, Form
 from src.Dependencies.check import isLogin 
 from src.Controller import postController
 from src.Schema.userSchema import UpdateProfile
-from src.Schema.postSchema import CommentPost
+from src.Schema.postSchema import CommentPost, CreatePost, EditPost
 userroutes = APIRouter(prefix="/user",tags=["User"])
 
 @userroutes.post("/createpost")
 async def postCreate(caption:str = Form(...),file: UploadFile= File(...),user=Depends(isLogin)):
-    return await postController.createPost(caption,file,user)
+    body = CreatePost(caption = caption)
+    return await postController.createPost(body,file,user)
 
 @userroutes.post("/createreel")
 async def reelcreate(caption:str = Form(...),file:UploadFile=File(...),user=Depends(isLogin)):
-    return await postController.createReel(caption,file,user)
+    body = CreatePost(caption=caption)
+    return await postController.createReel(body,file,user)
 
 @userroutes.get("/reels")
 async def reels(user=Depends(isLogin)):
@@ -19,7 +21,8 @@ async def reels(user=Depends(isLogin)):
 
 @userroutes.put("/updatepost/{postId}")
 async def updatePost(postId:str,caption:str,user=Depends(isLogin)):
-    return await postController.editPost(postId,caption,user)
+    body = EditPost(caption=caption)
+    return await postController.editPost(postId,body,user)
 
 @userroutes.delete("/deletepost/{postId}")
 async def deletepost(postId:str,user=Depends(isLogin)):

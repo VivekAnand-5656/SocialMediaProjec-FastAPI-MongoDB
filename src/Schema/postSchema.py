@@ -6,3 +6,6 @@ class CreatePost(BaseModel):
 
 class CommentPost(BaseModel):
     comment:str | None = None
+
+class EditPost(BaseModel):
+    caption:str | None = None
